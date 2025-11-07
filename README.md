@@ -6,8 +6,7 @@ Exploration and analysis of up to three large-scale datasets using **PySpark** t
 
 ## 🎯 Project Objective  
 
-This project simulates a **real-world big data consulting scenario**, where our group acts as data scientists at *BigDataCompany*.  
-The goal is to demonstrate technical and analytical proficiency using **PySpark** through:  
+This project simulates a **real-world big data consulting scenario**, where our group acts as data scientists at *BigDataCompany*. The goal is to demonstrate technical and analytical proficiency using **PySpark** through:  
 
 - **ETL & Data Cleaning** using RDDs and DataFrames  
 - **Exploratory Data Analysis** and summarization  
@@ -15,7 +14,51 @@ The goal is to demonstrate technical and analytical proficiency using **PySpark*
 - **Graph Analytics** using GraphFrames  
 - *(Optional Bonus)*: Integration with **MongoDB** and **Streaming**  
 
-Each dataset (up to three) highlights different Spark functionalities — such as classification, forecasting, or network analysis — to showcase a comprehensive understanding of big data processing.
+Each dataset highlights different Spark functionalities — such as classification, forecasting, or network analysis — to showcase a comprehensive understanding of big data processing.
+
+### 1️⃣ Seoul Bikes – Predicting Bike Rentals
+
+**Goal:**  
+Predict the **number of bikes rented** on a given date in Seoul based on environmental and temporal factors, such as weather, temperature, humidity, and seasonality.
+
+**Key Steps:**  
+- **Data Cleaning & Preprocessing:** Handling missing values, encoding categorical variables, and feature scaling.  
+- **Exploratory Data Analysis (EDA):** Identifying seasonal patterns, temperature influence, and rental trends.  
+- **Feature Engineering:** Extracting temporal features (month, weekday) from the `Date` variable.  
+- **Modeling:** Regression models using **Spark MLlib** (Linear Regression, Random Forest Regressor).  
+- **Evaluation:** Model performance assessed using **RMSE**, **MAE**, and **R²**.  
+
+**Highlights:**  
+- Demonstrates **Spark MLlib** for machine learning at scale.  
+- Showcases **data-driven forecasting** and **environmental impact analysis**.  
+
+---
+
+### 2️⃣ Books Network – Graph Analytics
+
+**Goal:**  
+Analyze a **book co-purchasing network** to uncover community structures, central books, and recommendation patterns using **GraphFrames**.
+
+**Key Steps:**  
+- **Graph Construction:** Nodes represent books; edges represent co-purchases or similarity links.  
+- **Network Metrics:** Calculation of **PageRank**, **in-degree/out-degree**, and **connected components**.  
+- **Community Detection:** Identifying clusters of related books using **Label Propagation**.  
+- **Visualization:** Graph insights visualized via network plots and summary statistics.
+
+**Highlights:**  
+- Demonstrates **GraphFrames** and **network analysis** in PySpark.  
+- Provides insights into **book recommendation systems** and **reader communities**.  
+
+---
+
+### 🧠 Summary  
+
+| Project | Focus Area | Key Spark Component | ML Task Type |
+|----------|-------------|---------------------|---------------|
+| **Seoul Bikes** | Environmental & Time Series Data | Spark MLlib | Regression |
+| **Books Network** | Network/Graph Data | GraphFrames | Graph Analytics |
+
+---
 
 ---
 
@@ -64,18 +107,6 @@ big-data-analysis/
 - **Lightning AI** (for orchestration and experimentation)  
 - **Matplotlib / Plotly / Seaborn** (for visualization)  
 - *(Optional)* MongoDB, Spark Streaming  
-
----
-
-## 🧩 Methodology  
-
-The workflow follows an **iterative data science process** inspired by **CRISP-DM**, adapted to a big data context:  
-
-1. **Data Understanding** – Explore and describe datasets.  
-2. **Data Preparation** – Build ETL pipelines using PySpark.  
-3. **Modeling** – Implement ML pipelines with Spark MLlib.  
-4. **Evaluation** – Assess performance and interpret insights.  
-5. **Deployment & Communication** – Present results and scalability considerations.  
 
 ---
 
