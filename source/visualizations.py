@@ -1,16 +1,15 @@
-from typing import List
+
+# Typing
+from typing import List, Union
+import numpy as np
+# PySpark
 from pyspark.sql import DataFrame
-import plotly.graph_objects as go
 import pyspark.sql.functions as F
-from pyspark.sql import DataFrame
-from pyspark.sql import functions as F
-from typing import List
-from pyspark.sql import DataFrame
-from typing import Union
-import pyspark.sql.functions as F
+from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.stat import Correlation
+# Plotly
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-
 
 def hist_plots_spark(train_df: DataFrame, val_df: DataFrame, cols: List[str]) -> None:
     """
@@ -199,94 +198,174 @@ def bar_plots_spark(train_df: DataFrame, val_df: DataFrame, cols: List[str]) -> 
 
     fig.show()
 
-def target_mean_per_category(df: DataFrame, category_cols: List[str], target_col: str = "Rented_Bike_Count") -> None:
+def plot_feature_distributions_by_target(df: DataFrame, target_col: str, feature_cols: List[str]) -> None:
     """
-    Displays the average target value (e.g., Rented_Bike_Count) per category.
+    Plots grouped bar charts showing the distribution of each feature column by target class.
 
     Parameters:
-        df (DataFrame): The input Spark DataFrame.
-        category_cols (List[str]): List of categorical columns to group by.
-        target_col (str): The target column to average. Defaults to 'Rented_Bike_Count'.
+        df (DataFrame): Spark DataFrame containing the data.
+        target_col (str): Name of the target column.
+        feature_cols (List[str]): List of categorical feature columns to visualize.
     """
-    for col in category_cols:
-        print(f"▶ Average {target_col} per {col}:")
-        df.groupBy(col).agg(F.mean(target_col).alias("avg_rented_bike_count")) \
-          .orderBy('avg_rented_bike_count') \
-          .show(truncate=False)
+    if not feature_cols:
+        print("No feature columns provided.")
+        return
 
-def line_target_distribution(train_df: DataFrame, val_df: DataFrame, title_train: str, title_val: str) -> None:
-    """
-    Generates side-by-side line charts showing average Rented_Bike_Count over Date
-    for training and validation Spark DataFrames.
+    fig = go.Figure()
+    buttons = []
 
-    Parameters:
-        train_df (DataFrame): Spark DataFrame for training data.
-        val_df (DataFrame): Spark DataFrame for validation data.
-        title_train (str): Title for the training plot.
-        title_val (str): Title for the validation plot.
-    """
+    for idx, feature in enumerate(feature_cols):
+        # Aggregate counts by feature and target
+        grouped = df.groupBy(feature, target_col).agg(F.count("*").alias("count")).collect()
 
-    # Aggregate average Rented_Bike_Count by Date
-    train_counts = (
-        train_df.groupBy("Date")
-        .agg(F.mean("Rented_Bike_Count").alias("avg_rented"))
-        .orderBy("Date")
-        .collect()
-    )
-    val_counts = (
-        val_df.groupBy("Date")
-        .agg(F.mean("Rented_Bike_Count").alias("avg_rented"))
-        .orderBy("Date")
-        .collect()
-    )
+        # Organize data
+        categories = sorted(set(row[feature] for row in grouped if row[feature] is not None))
+        targets = sorted(set(row[target_col] for row in grouped if row[target_col] is not None))
 
-    # Extract x (Date) and y (average Rented_Bike_Count) values
-    train_x = [row["Date"] for row in train_counts]
-    train_y = [row["avg_rented"] for row in train_counts]
-    val_x = [row["Date"] for row in val_counts]
-    val_y = [row["avg_rented"] for row in val_counts]
+        # Build traces for each target class
+        for t_idx, target_value in enumerate(targets):
+            counts = {row[feature]: row["count"] for row in grouped if row[target_col] == target_value}
+            y_vals = [counts.get(cat, 0) for cat in categories]
 
-    # Create subplots
-    fig = make_subplots(rows=1, cols=2, subplot_titles=[title_train, title_val])
+            fig.add_trace(go.Bar(
+                x=categories,
+                y=y_vals,
+                name=f'{target_col} = {target_value}',
+                visible=(idx == 0),
+                marker=dict(color=f'rgba({50 + t_idx*50}, {100 + t_idx*30}, {150 - t_idx*40}, 0.8)')
+            ))
 
-    # Add line plots
-    fig.add_trace(
-        go.Scatter(
-            x=train_x,
-            y=train_y,
-            mode="lines+markers",
-            line=dict(color="green"),
-            name=title_train
-        ),
-        row=1,
-        col=1
-    )
+        # Button for dropdown
+        buttons.append({
+            'method': 'update',
+            'label': feature,
+            'args': [
+                {'visible': [i // len(targets) == idx for i in range(len(feature_cols) * len(targets))]},
+                {'title': f'Distribution of <i>{feature}</i> by <i>{target_col}</i>', 'showlegend': True}
+            ]
+        })
 
-    fig.add_trace(
-        go.Scatter(
-            x=val_x,
-            y=val_y,
-            mode="lines+markers",
-            line=dict(color="darkmagenta"),
-            name=title_val
-        ),
-        row=1,
-        col=2
-    )
-
-    # Update layout
     fig.update_layout(
-        title_text="Average Rented Bike Count Over Time",
-        title_x=0.5,
-        title_font_size=20,
-        height=500,
-        showlegend=False,
-        xaxis_title="Date",
-        yaxis_title="Average Rented_Bike_Count"
+        updatemenus=[{
+            'type': 'dropdown',
+            'active': 0,
+            'buttons': buttons,
+            'x': 1,
+            'y': 1.15
+        }],
+        title=f'Distribution of <i>{feature_cols[0]}</i> by <i>{target_col}</i>',
+        barmode='group',
+        showlegend=True
     )
 
     fig.show()
 
+def plot_numerical_histograms_by_target(df: DataFrame, target_col: str, numeric_cols: List[str]) -> None:
+    """
+    Creates interactive histograms showing the distribution of numerical features across target classes.
 
+    Parameters:
+        df (DataFrame): Spark DataFrame containing the data.
+        target_col (str): Name of the target column.
+        numeric_cols (List[str]): List of numerical feature columns to visualize.
+    """
+    if not numeric_cols:
+        print("No numerical columns provided.")
+        return
 
+    fig = go.Figure()
+    buttons = []
+
+    # Get distinct target values
+    target_values = [row[target_col] for row in df.select(target_col).distinct().collect()]
+
+    for idx, feature in enumerate(numeric_cols):
+        traces = []
+        for t_idx, target_value in enumerate(target_values):
+            filtered = df.filter(F.col(target_col) == target_value).select(feature).dropna().collect()
+            values = [row[feature] for row in filtered]
+
+            traces.append(go.Histogram(
+                x=values,
+                name=f'{target_col} = {target_value}',
+                opacity=0.6,
+                nbinsx=30,
+                visible=(idx == 0)
+            ))
+
+        for trace in traces:
+            fig.add_trace(trace)
+
+        buttons.append({
+            'method': 'update',
+            'label': feature,
+            'args': [
+                {'visible': [i // len(target_values) == idx for i in range(len(numeric_cols) * len(target_values))]},
+                {'title': f'Histogram of <i>{feature}</i> by <i>{target_col}</i>', 'barmode': 'overlay', 'showlegend': True}
+            ]
+        })
+
+    fig.update_layout(
+        updatemenus=[{
+            'type': 'dropdown',
+            'active': 0,
+            'buttons': buttons,
+            'x': 1,
+            'y': 1.15
+        }],
+        title=f'Histogram of <i>{numeric_cols[0]}</i> by <i>{target_col}</i>',
+        xaxis_title='Feature Value',
+        yaxis_title='Count',
+        barmode='overlay',
+        showlegend=True
+    )
+
+    fig.show()
+
+def plot_spark_correlation_heatmap(df: DataFrame, numeric_cols: List[str]) -> None:
+    """
+    Efficiently computes and plots a correlation heatmap for numerical features in a Spark DataFrame.
+
+    Parameters:
+        df (DataFrame): Spark DataFrame containing the data.
+        numeric_cols (List[str]): List of numerical column names to include in the correlation matrix.
+    """
+    # Assemble features into a single vector column
+    assembler = VectorAssembler(inputCols=numeric_cols, outputCol="features")
+    vector_df = assembler.transform(df.select(numeric_cols)).select("features")
+
+    # Compute correlation matrix
+    corr_matrix = Correlation.corr(vector_df, "features", method="pearson").head()[0].toArray()
+
+    # Create heatmap
+    fig = go.Figure(data=go.Heatmap(
+        z=corr_matrix,
+        x=numeric_cols,
+        y=numeric_cols,
+        colorscale='RdBu',
+        zmin=-1,
+        zmax=1,
+        colorbar=dict(title='Correlation')
+    ))
+
+    # Add annotations
+    for i in range(len(numeric_cols)):
+        for j in range(len(numeric_cols)):
+            fig.add_annotation(
+                x=numeric_cols[j],
+                y=numeric_cols[i],
+                text=f"{corr_matrix[i][j]:.2f}",
+                showarrow=False,
+                font=dict(color="black", size=10)
+            )
+
+    fig.update_layout(
+        title='Correlation Heatmap of Numerical Features (Optimized)',
+        xaxis_title='Features',
+        yaxis_title='Features',
+        width=800,
+        height=800
+    )
+
+    fig.show()
 
