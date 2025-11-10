@@ -16,21 +16,23 @@ This project simulates a **real-world big data consulting scenario**, where our 
 
 Each dataset highlights different Spark functionalities — such as classification, forecasting, or network analysis — to showcase a comprehensive understanding of big data processing.
 
-### 1️⃣ Seoul Bikes – Predicting Bike Rentals
+### 1️⃣ Portuguese Bank Marketing – Predicting Term Deposit Subscription
 
-**Goal:**  
-Predict the **number of bikes rented** on a given date in Seoul based on environmental and temporal factors, such as weather, temperature, humidity, and seasonality.
+**Goal**  
+Predict whether a client will subscribe to a **term deposit** based on personal, financial, and campaign-related attributes collected during a direct marketing campaign by a Portuguese bank.
 
-**Key Steps:**  
-- **Data Cleaning & Preprocessing:** Handling missing values, encoding categorical variables, and feature scaling.  
-- **Exploratory Data Analysis (EDA):** Identifying seasonal patterns, temperature influence, and rental trends.  
-- **Feature Engineering:** Extracting temporal features (month, weekday) from the `Date` variable.  
-- **Modeling:** Regression models using **Spark MLlib** (Linear Regression, Random Forest Regressor).  
-- **Evaluation:** Model performance assessed using **RMSE**, **MAE**, and **R²**.  
+**Key Steps**  
+- **Data Cleaning & Preprocessing**: Dropping irrelevant data, treating outliers, and handling missing values  
+- **Feature Engineering**: Creating derived features from campaign history, contact duration, and loan indicators  
+- **Encoding**: Transforming categorical variables using `StringIndexer` and `OneHotEncoder`  
+- **Scaling**: Normalizing numerical features to improve model performance  
+- **Modeling**: Classification models using **Spark MLlib** (Logistic Regression, Random Forest, Decision Tree)  
+- **Evaluation**: Model performance assessed using **Accuracy**, **Precision**, **Recall**, and **F1-score**
 
-**Highlights:**  
-- Demonstrates **Spark MLlib** for machine learning at scale.  
-- Showcases **data-driven forecasting** and **environmental impact analysis**.  
+**Highlights**  
+- Applies **Spark MLlib** for scalable classification tasks  
+- Tackles **class imbalance** with stratified sampling and thoughtful preprocessing  
+- Demonstrates how marketing and financial data can drive **predictive insights** for customer targeting
 
 ---
 
@@ -53,12 +55,10 @@ Analyze a **book co-purchasing network** to uncover community structures, centra
 
 ### 🧠 Summary  
 
-| Project | Focus Area | Key Spark Component | ML Task Type |
-|----------|-------------|---------------------|---------------|
-| **Seoul Bikes** | Environmental & Time Series Data | Spark MLlib | Regression |
-| **Books Network** | Network/Graph Data | GraphFrames | Graph Analytics |
-
----
+| Project                     | Focus Area                     | Key Spark Component | ML Task Type     |
+|----------------------------|--------------------------------|---------------------|------------------|
+| **Books Network**          | Network/Graph Data             | GraphFrames         | Graph Analytics  |
+| **Portuguese Bank Marketing** | Financial & Marketing Data     | Spark MLlib        | Classification   |
 
 ---
 
