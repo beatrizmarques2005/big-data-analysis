@@ -1,5 +1,6 @@
 # code
 import re
+from pyspark.sql.functions import col
 
 def name_cleaner(name: str, char_list: list) -> str:
     """
@@ -10,7 +11,6 @@ def name_cleaner(name: str, char_list: list) -> str:
     remaining non-alphanumeric characters are removed.
 
     Parameters
-    ----------
     name(str): The input string to be cleaned.
     char_list(list): A list of characters to be removed or replaced with underscores.
 
@@ -36,10 +36,27 @@ def show_column_types(df: DataFrame):
     Parameters
     df(DataFrame): The Spark DataFrame to inspect.
     """
-    print("Column Name\t|\tData Type")
+    print("Column Name - Data Type")
     print("-" * 30)
     for col_name, dtype in df.dtypes:
-        print(f"{col_name}\t|\t{dtype}")
+        print(f"{col_name} - {dtype}")
+
+
+def transform_type(df:DataFrame, column_list: list, to_type: str) -> DataFrame:
+    """
+    Converts selected columns to a specific type of data
+
+    Parameters
+    df(DataFrame): The Spark DataFrame to inspect.
+    column_list(list): The list with the columns to trasnform 
+    to_type(str): The Type we want the values in the columns to be transformed to
+    """
+    for c in column_list:
+        df = df.withColumn(c, col(c).cast(to_type))
+
+    return df
+
+
 
 def winsorize_spark(reference_df: DataFrame, apply_to_df: DataFrame, columns: list[str]) -> DataFrame:
     """
@@ -69,3 +86,4 @@ def winsorize_spark(reference_df: DataFrame, apply_to_df: DataFrame, columns: li
         )
 
     return apply_to_df
+
