@@ -1,6 +1,12 @@
-# code
+
 import re
-from pyspark.sql.functions import col
+from pyspark.sql import functions as F
+from pyspark.sql import DataFrame
+from pyspark.ml.feature import StringIndexer, OneHotEncoder
+from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.feature import Normalizer
+from typing import List
+
 
 def name_cleaner(name: str, char_list: list) -> str:
     """
@@ -26,9 +32,6 @@ def name_cleaner(name: str, char_list: list) -> str:
 
     return re.sub(r'[^\w]', '', temp_name)
 
-
-from pyspark.sql import DataFrame
-
 def show_column_types(df: DataFrame):
     """
     Prints the name and data type of each column in a Spark DataFrame.
@@ -41,7 +44,6 @@ def show_column_types(df: DataFrame):
     for col_name, dtype in df.dtypes:
         print(f"{col_name} - {dtype}")
 
-
 def transform_type(df:DataFrame, column_list: list, to_type: str) -> DataFrame:
     """
     Converts selected columns to a specific type of data
@@ -52,13 +54,11 @@ def transform_type(df:DataFrame, column_list: list, to_type: str) -> DataFrame:
     to_type(str): The Type we want the values in the columns to be transformed to
     """
     for c in column_list:
-        df = df.withColumn(c, col(c).cast(to_type))
+        df = df.withColumn(c, F.col(c).cast(to_type))
 
     return df
 
-
-
-def winsorize_spark(reference_df: DataFrame, apply_to_df: DataFrame, columns: list[str]) -> DataFrame:
+def winsorize_spark(reference_df: DataFrame, apply_to_df: DataFrame, columns: List[str]) -> DataFrame:
     """
     Apply winsorization to specified columns in a Spark DataFrame using IQR from a reference DataFrame.
 
@@ -86,4 +86,68 @@ def winsorize_spark(reference_df: DataFrame, apply_to_df: DataFrame, columns: li
         )
 
     return apply_to_df
+
+def index_column(train_df: DataFrame, val_df: DataFrame, col: str) -> tuple:
+    """
+    Fit a StringIndexer on train_df and transform both train and val DataFrames.
+
+    Returns:
+        (train_transformed, val_transformed)
+    """
+    indexer = StringIndexer(inputCol=col, outputCol=f"{col}_index", handleInvalid="keep")
+    indexer_model = indexer.fit(train_df)
+    train_df = indexer_model.transform(train_df)
+    val_df = indexer_model.transform(val_df)
+    return train_df, val_df
+
+def onehot_column(train_df: DataFrame, val_df: DataFrame, col: str) -> tuple:
+    """
+    Fit a OneHotEncoder on train_df and transform both train and val DataFrames.
+
+    Returns:
+        (train_transformed, val_transformed)
+    """
+    encoder = OneHotEncoder(inputCol=f"{col}_index", outputCol=f"{col}_vec")
+    encoder_model = encoder.fit(train_df)
+    train_df = encoder_model.transform(train_df)
+    val_df = encoder_model.transform(val_df)
+    return train_df, val_df
+
+def assemble_features(train_df: DataFrame, val_df: DataFrame, input_cols: list, output_col: str) -> tuple:
+    """
+    Assemble a Spark feature vector for given columns.
+
+    Parameters:
+        train_df (DataFrame): Training DataFrame
+        val_df (DataFrame): Validation DataFrame
+        input_cols (list): List of columns to assemble
+        output_col (str): Name of the output vector column
+
+    Returns:
+        tuple: (train_transformed, val_transformed)
+    """
+    assembler = VectorAssembler(inputCols=input_cols, outputCol=output_col)
+    train_df = assembler.transform(train_df)
+    val_df = assembler.transform(val_df)
+    return train_df, val_df
+
+def normalize_features(train_df: DataFrame, val_df: DataFrame, input_col: str, output_col: str, p: float = 2.0) -> tuple:
+    """
+    Normalize a feature vector column in Spark using Lp norm.
+
+    Parameters:
+        train_df (DataFrame): Training DataFrame
+        val_df (DataFrame): Validation DataFrame
+        input_col (str): Name of the input vector column
+        output_col (str): Name of the output normalized vector column
+        p (float, optional): Lp norm (default 2.0)
+
+    Returns:
+        tuple: (train_transformed, val_transformed)
+    """
+    normalizer = Normalizer(inputCol=input_col, outputCol=output_col, p=p)
+    train_df = normalizer.transform(train_df)
+    val_df = normalizer.transform(val_df)
+    return train_df, val_df
+
 
