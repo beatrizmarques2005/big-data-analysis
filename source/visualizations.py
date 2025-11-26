@@ -27,6 +27,7 @@ def hist_plots_spark(train_df: DataFrame, val_df: DataFrame, cols: List[str]) ->
         return
 
     fig = go.Figure()
+    fig.update_layout(height=550, width = 950)
     buttons = []
 
     for idx, column in enumerate(numerical_columns):
@@ -90,6 +91,7 @@ def box_plots_spark(train_df: DataFrame, val_df: DataFrame, cols: List[str]) -> 
         return
 
     fig = go.Figure()
+    fig.update_layout(height=550, width = 950)
     buttons = []
 
     for idx, column in enumerate(numerical_columns):
@@ -149,6 +151,7 @@ def bar_plots_spark(train_df: DataFrame, val_df: DataFrame, cols: List[str]) -> 
         return
 
     fig = go.Figure()
+    fig.update_layout(height=550, width = 950)
     buttons = []
 
     for idx, column in enumerate(categorical_columns):
@@ -212,6 +215,7 @@ def plot_feature_distributions_by_target(df: DataFrame, target_col: str, feature
         return
 
     fig = go.Figure()
+    fig.update_layout(height=550, width = 950)
     buttons = []
 
     for idx, feature in enumerate(feature_cols):
@@ -232,7 +236,8 @@ def plot_feature_distributions_by_target(df: DataFrame, target_col: str, feature
                 y=y_vals,
                 name=f'{target_col} = {target_value}',
                 visible=(idx == 0),
-                marker=dict(color=f'rgba({50 + t_idx*50}, {100 + t_idx*30}, {150 - t_idx*40}, 0.8)')
+                marker=dict(color=f'rgba({50 + t_idx*50}, {100 + t_idx*30}, {150 - t_idx*40}, 0.8)'), 
+                marker_color = 'darkmagenta',
             ))
 
         # Button for dropdown
@@ -274,6 +279,7 @@ def plot_numerical_histograms_by_target(df: DataFrame, target_col: str, numeric_
         return
 
     fig = go.Figure()
+    fig.update_layout(height=550, width = 950)
     buttons = []
 
     # Get distinct target values
