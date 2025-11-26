@@ -225,19 +225,21 @@ def plot_feature_distributions_by_target(df: DataFrame, target_col: str, feature
         # Organize data
         categories = sorted(set(row[feature] for row in grouped if row[feature] is not None))
         targets = sorted(set(row[target_col] for row in grouped if row[target_col] is not None))
-
+        
         # Build traces for each target class
         for t_idx, target_value in enumerate(targets):
             counts = {row[feature]: row["count"] for row in grouped if row[target_col] == target_value}
             y_vals = [counts.get(cat, 0) for cat in categories]
 
+            bar_color = "darkgreen" if t_idx == 0 else "darkmagenta"
+            
             fig.add_trace(go.Bar(
                 x=categories,
                 y=y_vals,
                 name=f'{target_col} = {target_value}',
                 visible=(idx == 0),
-                marker=dict(color=f'rgba({50 + t_idx*50}, {100 + t_idx*30}, {150 - t_idx*40}, 0.8)'), 
-                marker_color = 'darkmagenta',
+                #marker=dict(color=f'rgba({50 + t_idx*50}, {100 + t_idx*30}, {150 - t_idx*40}, 0.8)'), 
+                marker_color = bar_color,
             ))
 
         # Button for dropdown
