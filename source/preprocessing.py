@@ -133,38 +133,13 @@ class FeatureEngineering(Transformer, DefaultParamsReadable, DefaultParamsWritab
     def _transform(self, df: DataFrame) -> DataFrame:
         """Apply all feature engineering transformations."""
         
-        # ---------- 1. Numeric transformations ----------
         df = df.withColumn("balance_per_campaign", col("balance_euros") / (col("campaign") + 1))
         df = df.withColumn("log_balance", F.log1p(col("balance_euros")))
-        df = df.withColumn("had_previous_contact", when(col("pdays") != 999, 1).otherwise(0))
-        df = df.withColumn("pdays_since_last", when(col("pdays") != 999, col("pdays")).otherwise(None))
-        df = df.withColumn("avg_contact_duration", col("last_contact_duration") / (col("campaign") + 1))
-        df = df.withColumn("previous_success_rate", col("previous") / (col("campaign") + 1))
-
-        # ---------- 2. Temporal features ----------
-        # df = df.withColumn("quarter", ((col("month_num") - 1) / 3 + 1).cast(IntegerType()))
-        # df = df.withColumn("is_summer_campaign", when(col("last_contact_month").isin(['jun', 'jul', 'aug']), 1).otherwise(0))
-
-        # ---------- 3. Credit & financial ----------
-        df = df.withColumn("total_loans", col("has_credit") + col("has_housing_loan") + col("has_personal_loan"))
-
-        df = df.withColumn("net_balance", col("balance_euros") - (1000 * col("total_loans")))
-
-        # ---------- 5. Contact-related ----------
-        df = df.withColumn("is_cellphone", when(col("contact") == "cellular", 1).otherwise(0))
+        df = df.withColumn("had_previous_contact", when(col("pdays") != -1, 1).otherwise(0))
 
         df = df.withColumn(
             "high_effort_client", 
             when(col("campaign") > self.campaign_median, 1).otherwise(0)
         )
-
-        df = df.withColumn("contact_intensity",
-                           col("campaign") + col("previous") + col("last_contact_duration"))
-
-        # ---------- 6. Combined categorical ----------
-        df = df.withColumn("job_education_combo", concat_ws("_", col("job"), col("education")))
-        df = df.withColumn("marital_education_combo", concat_ws("_", col("marital_status"), col("education")))
-        df = df.withColumn("loan_profile",
-                           concat_ws("", col("has_credit"), col("has_housing_loan"), col("has_personal_loan")))
-
+        
         return df
