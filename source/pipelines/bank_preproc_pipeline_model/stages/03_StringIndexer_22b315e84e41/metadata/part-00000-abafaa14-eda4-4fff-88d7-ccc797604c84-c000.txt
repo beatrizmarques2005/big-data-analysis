@@ -1,0 +1,1 @@
+{"class":"org.apache.spark.ml.feature.StringIndexer","timestamp":1765304615424,"sparkVersion":"4.0.1","uid":"StringIndexer_22b315e84e41","paramMap":{"inputCol":"credit","outputCol":"credit_idx","handleInvalid":"keep"},"defaultParamMap":{"outputCol":"StringIndexer_22b315e84e41__output","stringOrderType":"frequencyDesc","handleInvalid":"error"}}

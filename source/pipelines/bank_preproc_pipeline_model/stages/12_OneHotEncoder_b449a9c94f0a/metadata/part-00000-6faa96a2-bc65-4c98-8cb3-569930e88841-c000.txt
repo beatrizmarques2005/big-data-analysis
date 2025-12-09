@@ -1,0 +1,1 @@
+{"class":"org.apache.spark.ml.feature.OneHotEncoder","timestamp":1765304616396,"sparkVersion":"4.0.1","uid":"OneHotEncoder_b449a9c94f0a","paramMap":{"outputCol":"contact_ohe","inputCol":"contact_idx"},"defaultParamMap":{"outputCol":"OneHotEncoder_b449a9c94f0a__output","handleInvalid":"error","dropLast":true}}
