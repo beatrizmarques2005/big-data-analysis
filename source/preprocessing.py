@@ -134,7 +134,7 @@ class FeatureEngineering(Transformer, DefaultParamsReadable, DefaultParamsWritab
         """Apply all feature engineering transformations."""
         
         df = df.withColumn("balance_per_campaign", col("balance_euros") / (col("campaign") + 1))
-        df = df.withColumn("log_balance", F.log1p(col("balance_euros")))
+        df = df.withColumn("log_balance", F.log1p(when(col("balance_euros") < 0, 0).otherwise(col("balance_euros"))))
         df = df.withColumn("had_previous_contact", when(col("pdays") != -1, 1).otherwise(0))
 
         df = df.withColumn(
