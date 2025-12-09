@@ -80,9 +80,9 @@ def transform_type(df: DataFrame, column_list: list, to_type: str) -> DataFrame:
 # -----------------------------
 
 class Winsorizer(Transformer, DefaultParamsReadable, DefaultParamsWritable):
-    def __init__(self, columns, lower_q=0.25, upper_q=0.75, iqr_multiplier=1.5):
+    def __init__(self, lower_q=0.25, upper_q=0.75, iqr_multiplier=1.5):
         super().__init__()
-        self.columns = columns
+        self.columns = ["age", "campaign", "last_contact_day", "last_contact_duration", "balance_euros"]
         self.lower_q = lower_q
         self.upper_q = upper_q
         self.iqr_multiplier = iqr_multiplier
@@ -133,8 +133,8 @@ class FeatureEngineering(Transformer, DefaultParamsReadable, DefaultParamsWritab
     def _transform(self, df: DataFrame) -> DataFrame:
         """Apply all feature engineering transformations."""
         
-        df = df.withColumn("balance_per_campaign", col("balance_euros") / (col("campaign") + 1))
-        df = df.withColumn("log_balance", F.log1p(when(col("balance_euros") < 0, 0).otherwise(col("balance_euros"))))
+        #df = df.withColumn("balance_per_campaign", col("balance_euros") / (col("campaign") + 1))
+        #df = df.withColumn("log_balance", F.log1p(when(col("balance_euros") < 0, 0).otherwise(col("balance_euros"))))
         df = df.withColumn("had_previous_contact", when(col("pdays") != -1, 1).otherwise(0))
 
         df = df.withColumn(
