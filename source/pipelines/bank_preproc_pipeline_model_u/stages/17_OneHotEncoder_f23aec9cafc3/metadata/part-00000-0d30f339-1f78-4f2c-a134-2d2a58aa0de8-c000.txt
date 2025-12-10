@@ -1,0 +1,1 @@
+{"class":"org.apache.spark.ml.feature.OneHotEncoder","timestamp":1765327357655,"sparkVersion":"4.0.1","uid":"OneHotEncoder_f23aec9cafc3","paramMap":{"inputCol":"marital_status_idx","outputCol":"marital_status_ohe"},"defaultParamMap":{"outputCol":"OneHotEncoder_f23aec9cafc3__output","handleInvalid":"error","dropLast":true}}

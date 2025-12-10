@@ -116,6 +116,65 @@ class Winsorizer(Transformer, DefaultParamsReadable, DefaultParamsWritable):
     def fit(self, df):
         return self._fit(df)
 
+
+import json
+from pyspark.ml import Transformer
+from pyspark.ml.param.shared import Param, Params
+from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
+from pyspark.sql.functions import col, when
+
+class Winsorizer2(Transformer, DefaultParamsReadable, DefaultParamsWritable):
+    """
+    Winsorizes numerical columns based on IQR. Fully PySpark serializable.
+    """
+    bounds = Param(Params._dummy(), "bounds", "JSON dictionary of lower and upper bounds")
+
+    def __init__(self, columns=None, lower_q=0.25, upper_q=0.75, iqr_multiplier=1.5):
+        super().__init__()
+        self.columns = columns or ["age", "campaign", "last_contact_day", "last_contact_duration", "balance_euros"]
+        self.lower_q = lower_q
+        self.upper_q = upper_q
+        self.iqr_multiplier = iqr_multiplier
+
+        # Initialize bounds to empty JSON
+        self._setDefault(bounds=json.dumps({}))
+
+    def fit(self, df):
+        """
+        Compute IQR-based lower and upper bounds for each column.
+        """
+        b = {}
+        for c in self.columns:
+            # Approximate quantiles
+            q1, q3 = df.approxQuantile(c, [self.lower_q, self.upper_q], 0.01)
+            iqr = q3 - q1
+            lower = q1 - self.iqr_multiplier * iqr
+            upper = q3 + self.iqr_multiplier * iqr
+            b[c] = (lower, upper)
+        # Save bounds as JSON Param (serializable)
+        self._set(bounds=json.dumps(b))
+        return self
+
+    def _transform(self, df):
+        """
+        Apply winsorization using the stored bounds.
+        """
+        b = json.loads(self.getOrDefault(self.bounds))
+        out_df = df
+        for c, (lower, upper) in b.items():
+            if c not in df.columns:
+                continue  # skip missing columns
+            out_df = out_df.withColumn(
+                c,
+                when(col(c) < lower, lower)
+                .when(col(c) > upper, upper)
+                .otherwise(col(c))
+            )
+        return out_df
+
+
+
+
 # -----------------------------
 # FEATURE ENGINEERING
 # -----------------------------
