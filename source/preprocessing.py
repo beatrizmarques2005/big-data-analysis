@@ -79,49 +79,77 @@ def transform_type(df: DataFrame, column_list: list, to_type: str) -> DataFrame:
 # OUTLIERS
 # -----------------------------
 
-class Winsorizer(Transformer, DefaultParamsReadable, DefaultParamsWritable):
-    def __init__(self, lower_q=0.25, upper_q=0.75, iqr_multiplier=1.5):
+
+
+import json
+from pyspark.ml import Transformer, Estimator, Model
+from pyspark.ml.param.shared import Param, Params, TypeConverters
+from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
+from pyspark.sql.functions import col, when
+# PROFESSORS' CODE!!!
+# 1. Define shared parameters
+"""class WinsorizerParams(Params):
+    lower_q = Param(Params._dummy(), "lower_q", "lower quantile", typeConverter=TypeConverters.toFloat)
+    upper_q = Param(Params._dummy(), "upper_q", "upper quantile", typeConverter=TypeConverters.toFloat)
+    iqr_multiplier = Param(Params._dummy(), "iqr_multiplier", "iqr multiplier", typeConverter=TypeConverters.toFloat)
+    columns_to_winsorize = Param(Params._dummy(), "columns_to_winsorize", "columns to process", typeConverter=TypeConverters.toListString)
+
+    def __init__(self):
         super().__init__()
-        self.columns = ["age", "campaign", "last_contact_day", "last_contact_duration", "balance_euros"]
-        self.lower_q = lower_q
-        self.upper_q = upper_q
-        self.iqr_multiplier = iqr_multiplier
-        self.bounds = {}
+        self._setDefault(lower_q=0.25, upper_q=0.75, iqr_multiplier=1.5, columns_to_winsorize=[])
 
-    def _fit(self, df: DataFrame):
-        """Compute IQR-based winsorization bounds from reference df."""
-        for c in self.columns:
-            q1, q3 = df.approxQuantile(c, [self.lower_q, self.upper_q], 0.01)
+# 2. The Estimator: Learns the bounds
+class Winsorizer(Estimator, WinsorizerParams, DefaultParamsReadable, DefaultParamsWritable):
+    def __init__(self, lower_q=0.25, upper_q=0.75, iqr_multiplier=1.5, columns_to_winsorize=[]):
+        super().__init__()
+        self.set(self.lower_q, lower_q)
+        self.set(self.upper_q, upper_q)
+        self.set(self.iqr_multiplier, iqr_multiplier)
+        self.set(self.columns_to_winsorize, columns_to_winsorize)
+
+    def _fit(self, df):
+        # Get parameters
+        cols = self.getOrDefault(self.columns_to_winsorize)
+        lq = self.getOrDefault(self.lower_q)
+        uq = self.getOrDefault(self.upper_q)
+        mult = self.getOrDefault(self.iqr_multiplier)
+        
+        # Calculate bounds
+        bounds = {}
+        for c in cols:
+            q1, q3 = df.approxQuantile(c, [lq, uq], 0.01)
             iqr = q3 - q1
-
-            lower = q1 - self.iqr_multiplier * iqr
-            upper = q3 + self.iqr_multiplier * iqr
+            lower = q1 - mult * iqr
+            upper = q3 + mult * iqr
+            bounds[c] = (lower, upper)
             
-            self.bounds[c] = (lower, upper)
-        return self
+        # Return the Model with bounds saved as a JSON string Param
+        return WinsorizerModel(bounds=json.dumps(bounds)).setParent(self)
 
-    def _transform(self, df: DataFrame):
-        """Apply winsorization to DataFrame using learned IQR bounds."""
+# 3. The Model: Applies the bounds (Transformer)
+class WinsorizerModel(Model, WinsorizerParams, DefaultParamsReadable, DefaultParamsWritable):
+    # We use a String Param to store the dictionary because PySpark doesn't support Dict Params easily
+    bounds = Param(Params._dummy(), "bounds", "json string of bounds", typeConverter=TypeConverters.toString)
+
+    def __init__(self, bounds=None):
+        super().__init__()
+        if bounds:
+            self.set(self.bounds, bounds)
+
+    def _transform(self, df):
+        # Load bounds from the Param
+        bounds_dict = json.loads(self.getOrDefault(self.bounds))
+        
         out_df = df
-        for c in self.columns:
-            lower, upper = self.bounds[c]
+        for c, (lower, upper) in bounds_dict.items():
             out_df = out_df.withColumn(
                 c,
                 when(col(c) < lower, lower)
                 .when(col(c) > upper, upper)
                 .otherwise(col(c))
             )
-        return out_df
+        return out_df"""
 
-    def fit(self, df):
-        return self._fit(df)
-
-
-import json
-from pyspark.ml import Transformer
-from pyspark.ml.param.shared import Param, Params
-from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
-from pyspark.sql.functions import col, when
 
 class Winsorizer2(Transformer, DefaultParamsReadable, DefaultParamsWritable):
     """
@@ -171,7 +199,6 @@ class Winsorizer2(Transformer, DefaultParamsReadable, DefaultParamsWritable):
                 .otherwise(col(c))
             )
         return out_df
-
 
 
 
