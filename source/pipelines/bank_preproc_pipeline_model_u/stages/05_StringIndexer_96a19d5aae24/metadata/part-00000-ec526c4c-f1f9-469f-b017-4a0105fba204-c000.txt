@@ -1,1 +1,0 @@
-{"class":"org.apache.spark.ml.feature.StringIndexer","timestamp":1765327356265,"sparkVersion":"4.0.1","uid":"StringIndexer_96a19d5aae24","paramMap":{"inputCol":"housing_loan","outputCol":"housing_loan_idx","handleInvalid":"keep"},"defaultParamMap":{"outputCol":"StringIndexer_96a19d5aae24__output","stringOrderType":"frequencyDesc","handleInvalid":"error"}}

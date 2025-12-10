@@ -1,1 +1,0 @@
-{"class":"org.apache.spark.ml.feature.OneHotEncoderModel","timestamp":1765322105646,"sparkVersion":"4.0.1","uid":"OneHotEncoder_a94547de98f9","paramMap":{"outputCol":"personal_loan_ohe","inputCol":"personal_loan_idx"},"defaultParamMap":{"dropLast":true,"outputCol":"OneHotEncoder_a94547de98f9__output","handleInvalid":"error"}}
