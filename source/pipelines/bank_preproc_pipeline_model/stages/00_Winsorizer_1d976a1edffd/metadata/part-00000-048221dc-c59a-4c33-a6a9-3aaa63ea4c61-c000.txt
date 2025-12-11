@@ -1,0 +1,1 @@
+{"class":"preprocessing.Winsorizer","timestamp":1765454184157,"sparkVersion":"4.0.1","uid":"Winsorizer_1d976a1edffd","paramMap":{"bounds":"{\"age\": [10.5, 70.5], \"campaign\": [-2.0, 6.0], \"last_contact_day\": [-11.5, 40.5], \"last_contact_duration\": [-208.5, 627.5], \"balance_euros\": [-1877.5, 3334.5]}"},"defaultParamMap":{"bounds":"{}"}}

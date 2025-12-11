@@ -1,47 +1,37 @@
 
-# -----------------------------
-# IMPORTS
-# -----------------------------
-
 import re
-from typing import List
-
+import json
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql.functions import (
     col,
     when,
-    expr,
-    lit,
-    concat_ws,
-    create_map,
-)
-from pyspark.sql.types import (
-    IntegerType,
-    DoubleType,
 )
 
 from pyspark.ml import Transformer
 from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
-from pyspark.ml.feature import (
-    StringIndexer,
-    OneHotEncoder,
-    VectorAssembler,
-    Normalizer,
-)
+from pyspark.ml.param.shared import Param, Params
+
 
 def name_cleaner(name: str, char_list: list) -> str:
     """
-    Cleans a given string to make it safe for use in identifiers or filenames.
+    Cleans a string to make it safe for use as an identifier or filename.
 
-    This function replaces each character in `char_list` with an underscore,
-    except for parentheses '(' and ')' which are removed. After that, any
-    remaining non-alphanumeric characters are removed.
+    Each character in `char_list` is replaced with an underscore (`_`), 
+    except for parentheses '(' and ')' which are removed. 
+    Finally, any remaining non-alphanumeric characters are removed.
 
     Parameters
-    name(str): The input string to be cleaned.
-    char_list(list): A list of characters to be removed or replaced with underscores.
+    ----------
+    name : str
+        The input string to be cleaned.
+    char_list : list of str
+        Characters to replace with underscores or remove.
 
+    Returns
+    -------
+    str
+        The cleaned string containing only alphanumeric characters and underscores.
     """
 
     temp_name = name
@@ -54,22 +44,47 @@ def name_cleaner(name: str, char_list: list) -> str:
 
     return re.sub(r'[^\w]', '', temp_name)
 
-def show_column_types(df: DataFrame):
+def show_column_types(df: DataFrame) -> None:
     """
-    Prints the name and data type of each column in a Spark DataFrame.
+    Prints the names and data types of all columns in a Spark DataFrame.
 
     Parameters
-    df(DataFrame): The Spark DataFrame to inspect.
+    ----------
+    df : pyspark.sql.DataFrame
+        The DataFrame to inspect.
+
+    Returns
+    -------
+    None
+        Prints the column names and types to the console.
+
     """
     print("Column Name - Data Type")
     print("-" * 30)
+
     for col_name, dtype in df.dtypes:
         print(f"{col_name} - {dtype}")
 
 def transform_type(df: DataFrame, column_list: list, to_type: str) -> DataFrame:
     """
-    Safely converts selected columns to a specific type using try_cast().
-    Malformed rows become NULL instead of causing job failures.
+    Safely converts the data type of multiple columns in a Spark DataFrame using `try_cast`.
+
+    Any value that cannot be converted will result in `NULL` instead of causing a failure,
+    making this function safe for dirty or inconsistent data.
+
+    Parameters
+    ----------
+    df : pyspark.sql.DataFrame
+        The input Spark DataFrame containing the columns to transform.
+    column_list : list of str
+        A list of column names in `df` that should be converted to the new type.
+    to_type : str
+        The target data type as a string (e.g., 'INT', 'DOUBLE', 'STRING').
+
+    Returns
+    -------
+    pyspark.sql.DataFrame
+        A new DataFrame with the specified columns converted to the target type.
     """
     for c in column_list:
         df = df.withColumn(c, F.expr(f"try_cast(`{c}` AS {to_type})"))
@@ -78,86 +93,30 @@ def transform_type(df: DataFrame, column_list: list, to_type: str) -> DataFrame:
 # -----------------------------
 # OUTLIERS
 # -----------------------------
-
-
-
-import json
-from pyspark.ml import Transformer, Estimator, Model
-from pyspark.ml.param.shared import Param, Params, TypeConverters
-from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
-from pyspark.sql.functions import col, when
-# PROFESSORS' CODE!!!
-# 1. Define shared parameters
-"""class WinsorizerParams(Params):
-    lower_q = Param(Params._dummy(), "lower_q", "lower quantile", typeConverter=TypeConverters.toFloat)
-    upper_q = Param(Params._dummy(), "upper_q", "upper quantile", typeConverter=TypeConverters.toFloat)
-    iqr_multiplier = Param(Params._dummy(), "iqr_multiplier", "iqr multiplier", typeConverter=TypeConverters.toFloat)
-    columns_to_winsorize = Param(Params._dummy(), "columns_to_winsorize", "columns to process", typeConverter=TypeConverters.toListString)
-
-    def __init__(self):
-        super().__init__()
-        self._setDefault(lower_q=0.25, upper_q=0.75, iqr_multiplier=1.5, columns_to_winsorize=[])
-
-# 2. The Estimator: Learns the bounds
-class Winsorizer(Estimator, WinsorizerParams, DefaultParamsReadable, DefaultParamsWritable):
-    def __init__(self, lower_q=0.25, upper_q=0.75, iqr_multiplier=1.5, columns_to_winsorize=[]):
-        super().__init__()
-        self.set(self.lower_q, lower_q)
-        self.set(self.upper_q, upper_q)
-        self.set(self.iqr_multiplier, iqr_multiplier)
-        self.set(self.columns_to_winsorize, columns_to_winsorize)
-
-    def _fit(self, df):
-        # Get parameters
-        cols = self.getOrDefault(self.columns_to_winsorize)
-        lq = self.getOrDefault(self.lower_q)
-        uq = self.getOrDefault(self.upper_q)
-        mult = self.getOrDefault(self.iqr_multiplier)
-        
-        # Calculate bounds
-        bounds = {}
-        for c in cols:
-            q1, q3 = df.approxQuantile(c, [lq, uq], 0.01)
-            iqr = q3 - q1
-            lower = q1 - mult * iqr
-            upper = q3 + mult * iqr
-            bounds[c] = (lower, upper)
-            
-        # Return the Model with bounds saved as a JSON string Param
-        return WinsorizerModel(bounds=json.dumps(bounds)).setParent(self)
-
-# 3. The Model: Applies the bounds (Transformer)
-class WinsorizerModel(Model, WinsorizerParams, DefaultParamsReadable, DefaultParamsWritable):
-    # We use a String Param to store the dictionary because PySpark doesn't support Dict Params easily
-    bounds = Param(Params._dummy(), "bounds", "json string of bounds", typeConverter=TypeConverters.toString)
-
-    def __init__(self, bounds=None):
-        super().__init__()
-        if bounds:
-            self.set(self.bounds, bounds)
-
-    def _transform(self, df):
-        # Load bounds from the Param
-        bounds_dict = json.loads(self.getOrDefault(self.bounds))
-        
-        out_df = df
-        for c, (lower, upper) in bounds_dict.items():
-            out_df = out_df.withColumn(
-                c,
-                when(col(c) < lower, lower)
-                .when(col(c) > upper, upper)
-                .otherwise(col(c))
-            )
-        return out_df"""
-
-
-class Winsorizer2(Transformer, DefaultParamsReadable, DefaultParamsWritable):
+class Winsorizer(Transformer, DefaultParamsReadable, DefaultParamsWritable):
     """
-    Winsorizes numerical columns based on IQR. Fully PySpark serializable.
+    PySpark Transformer that winsorizes numerical columns based on IQR (Interquartile Range).
+
+    This class is fully serializable in PySpark and allows capping values in numerical 
+    columns to reduce the effect of extreme outliers.
     """
     bounds = Param(Params._dummy(), "bounds", "JSON dictionary of lower and upper bounds")
 
     def __init__(self, columns=None, lower_q=0.25, upper_q=0.75, iqr_multiplier=1.5):
+        """
+        Initialize the Winsorizer.
+
+        Parameters
+        ----------
+        columns : list of str, optional
+            List of numerical columns to winsorize. Defaults to common numeric columns.
+        lower_q : float, default=0.25
+            Lower quantile for IQR calculation.
+        upper_q : float, default=0.75
+            Upper quantile for IQR calculation.
+        iqr_multiplier : float, default=1.5
+            Multiplier applied to the IQR to compute lower and upper bounds.
+        """
         super().__init__()
         self.columns = columns or ["age", "campaign", "last_contact_day", "last_contact_duration", "balance_euros"]
         self.lower_q = lower_q
@@ -169,7 +128,17 @@ class Winsorizer2(Transformer, DefaultParamsReadable, DefaultParamsWritable):
 
     def fit(self, df):
         """
-        Compute IQR-based lower and upper bounds for each column.
+        Compute IQR-based lower and upper bounds for each specified column.
+
+        Parameters
+        ----------
+        df : pyspark.sql.DataFrame
+            Input DataFrame to compute column bounds.
+
+        Returns
+        -------
+        self : Winsorizer
+            Returns the fitted Winsorizer with bounds stored as a JSON Param.
         """
         b = {}
         for c in self.columns:
@@ -185,7 +154,17 @@ class Winsorizer2(Transformer, DefaultParamsReadable, DefaultParamsWritable):
 
     def _transform(self, df):
         """
-        Apply winsorization using the stored bounds.
+        Apply winsorization to the DataFrame using the stored bounds.
+
+        Parameters
+        ----------
+        df : pyspark.sql.DataFrame
+            Input DataFrame to transform.
+
+        Returns
+        -------
+        pyspark.sql.DataFrame
+            DataFrame with winsorized columns.
         """
         b = json.loads(self.getOrDefault(self.bounds))
         out_df = df
@@ -200,32 +179,71 @@ class Winsorizer2(Transformer, DefaultParamsReadable, DefaultParamsWritable):
             )
         return out_df
 
-
-
 # -----------------------------
 # FEATURE ENGINEERING
 # -----------------------------
-
 class FeatureEngineering(Transformer, DefaultParamsReadable, DefaultParamsWritable):
+    """
+    PySpark Transformer for custom feature engineering.
+
+    Computes training-based statistics (e.g., median) and creates new features 
+    from existing columns. Fully serializable for Spark ML pipelines.
+    """
     def __init__(self):
+        """Initialize the FeatureEngineering transformer."""
         super().__init__()
         self.campaign_median = None
 
     def fit(self, df: DataFrame):
-        """Compute statistics that must be learned from training data."""
+        """
+        Learn statistics required for feature engineering from the training DataFrame.
+
+        Parameters
+        ----------
+        df : pyspark.sql.DataFrame
+            The input DataFrame to learn statistics from.
+
+        Returns
+        -------
+        self : FeatureEngineering
+            Returns the fitted transformer with computed statistics stored.
+        """
         self.campaign_median = df.approxQuantile("campaign", [0.5], 0.01)[0]
         return self
 
     def _transform(self, df: DataFrame) -> DataFrame:
-        """Apply all feature engineering transformations."""
-        
-        #df = df.withColumn("balance_per_campaign", col("balance_euros") / (col("campaign") + 1))
-        #df = df.withColumn("log_balance", F.log1p(when(col("balance_euros") < 0, 0).otherwise(col("balance_euros"))))
-        df = df.withColumn("had_previous_contact", when(col("pdays") != -1, 1).otherwise(0))
+        """
+        Apply feature engineering transformations to the DataFrame.
 
+        Transformations:
+        1. Creates 'had_previous_contact' based on 'pdays' (-1 → 0, else 1).
+        2. Drops the original 'pdays' column.
+        3. Creates 'high_effort_client' flag where 'campaign' exceeds median value.
+
+        Parameters
+        ----------
+        df : pyspark.sql.DataFrame
+            Input DataFrame to transform.
+
+        Returns
+        -------
+        pyspark.sql.DataFrame
+            Transformed DataFrame with new features.
+        """
+
+        # New feature based on pdays
+        df = df.withColumn(
+            "had_previous_contact", 
+            when(col("pdays") != -1, 1).otherwise(0)
+        )
+        
+        df = df.drop("pdays")
+
+        # df = df.withColumn("balance_per_campaign", col("balance_euros") / (col("campaign") + 1))
+        # New feature based on campaign median
         df = df.withColumn(
             "high_effort_client", 
             when(col("campaign") > self.campaign_median, 1).otherwise(0)
         )
-        
+
         return df
