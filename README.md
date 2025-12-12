@@ -18,12 +18,12 @@
 big-data-analysis/
 │
 ├── data/
-│   ├── bank_split_ids/                 # Train/Val/Test ID lists for stratified partitioning
+│   ├── bank_split_ids/                              # Train/Val/Test ID lists for stratified partitioning
 │   │   ├── test_ids/
 │   │   ├── train_ids/
 │   │   └── val_ids/
 │   └── raw/
-│       └── BankMarketing.csv           # Original dataset
+│       └── BankMarketing.csv                        # Original dataset
 │
 ├── notebooks/
 │   ├── BankMarketing/
@@ -34,22 +34,20 @@ big-data-analysis/
 │   │
 │   ├── Books/                    
 │   │   ├── 01_exploration_and_preprocessing.ipynb
-│   │   ├── 02_GraphFrames.ipynb
-│   │   ├── 04_graphframes.ipynb
-│   │   └── 05_summary_visuals.ipynb
+│   │   └── 02_graphframes.ipynb
 │   │
-│   └── MongoDB_connection.ipynb        # MongoDB import and validation
+│   └── MongoDB_connection.ipynb                     # MongoDB import and validation
 │
 ├── source/
 │   ├── pipelines/
-│   │   ├── bank_preproc_pipeline_model     # Saved BankMarketing preprocessing fitted pipeline
-│   │   └── bank_preproc_pipeline_model_u   # Saved BankMarketing preprocessing unfitted pipeline
+│   │   ├── bank_preproc_pipeline_model              # Saved BankMarketing preprocessing fitted pipeline
+│   │   └── bank_preproc_pipeline_model_u            # Saved BankMarketing preprocessing unfitted pipeline
 │   │
-│   ├── ml_functions.py                 # ML models and evaluators
-│   ├── preprocessing.py                # Custom transformers & data preparation
-│   └── visualizations.py               # Plotting and Spark visualization helpers
+│   ├── ml_functions.py                              # ML models and evaluators
+│   ├── preprocessing.py                             # Custom transformers & data preparation
+│   └── visualizations.py                            # Plotting and Spark visualization helpers
 │
-├── spark_checkpoints/                  # Metadata for structured Spark checkpoints
+├── spark_checkpoints/                               # Metadata for structured Spark checkpoints
 │
 ├── .gitignore
 └── README.md
