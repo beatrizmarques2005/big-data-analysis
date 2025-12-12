@@ -1,15 +1,9 @@
-
-# Typing
-from typing import List, Union
-import numpy as np
-# PySpark
+from typing import List
 from pyspark.sql import DataFrame
 import pyspark.sql.functions as F
 from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.stat import Correlation
-# Plotly
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 def hist_plots_spark(train_df: DataFrame, val_df: DataFrame, cols: List[str]) -> None:
     """
@@ -338,14 +332,11 @@ def plot_spark_correlation_heatmap(df: DataFrame, numeric_cols: List[str]) -> No
         df (DataFrame): Spark DataFrame containing the data.
         numeric_cols (List[str]): List of numerical column names to include in the correlation matrix.
     """
-    # Assemble features into a single vector column
     assembler = VectorAssembler(inputCols=numeric_cols, outputCol="features")
     vector_df = assembler.transform(df.select(numeric_cols)).select("features")
 
-    # Compute correlation matrix
     corr_matrix = Correlation.corr(vector_df, "features", method="pearson").head()[0].toArray()
 
-    # Create heatmap
     fig = go.Figure(data=go.Heatmap(
         z=corr_matrix,
         x=numeric_cols,
@@ -356,7 +347,6 @@ def plot_spark_correlation_heatmap(df: DataFrame, numeric_cols: List[str]) -> No
         colorbar=dict(title='Correlation')
     ))
 
-    # Add annotations
     for i in range(len(numeric_cols)):
         for j in range(len(numeric_cols)):
             fig.add_annotation(
@@ -376,53 +366,3 @@ def plot_spark_correlation_heatmap(df: DataFrame, numeric_cols: List[str]) -> No
     )
 
     fig.show()
-
-from pyspark.sql import DataFrame
-from pyspark.ml.feature import VectorAssembler
-from pyspark.ml.stat import Correlation
-from pyspark.sql.functions import col
-import plotly.graph_objects as go
-
-"""def plot_spark_correlation_heatmap_optimized(df: DataFrame, numeric_cols: list):
-    # 1. Select only numeric columns, cast to double, drop nulls
-    numeric_df = df.select([col(c).cast("double") for c in numeric_cols]).na.drop()
-
-    # 2. Assemble numeric features into a vector
-    assembler = VectorAssembler(inputCols=numeric_cols, outputCol="features")
-    vector_df = assembler.transform(numeric_df).select("features")
-
-    # 3. Compute correlation matrix
-    corr_matrix = Correlation.corr(vector_df, "features", method="pearson").head()[0].toArray()
-
-    # 4. Plot heatmap
-    fig = go.Figure(data=go.Heatmap(
-        z=corr_matrix,
-        x=numeric_cols,
-        y=numeric_cols,
-        colorscale='RdBu',
-        zmin=-1,
-        zmax=1,
-        colorbar=dict(title='Correlation')
-    ))
-
-    # Add annotations
-    for i in range(len(numeric_cols)):
-        for j in range(len(numeric_cols)):
-            fig.add_annotation(
-                x=numeric_cols[j],
-                y=numeric_cols[i],
-                text=f"{corr_matrix[i][j]:.2f}",
-                showarrow=False,
-                font=dict(color="black", size=10)
-            )
-
-    fig.update_layout(
-        title='Correlation Heatmap of Numerical Features',
-        xaxis_title='Features',
-        yaxis_title='Features',
-        width=800,
-        height=800
-    )
-
-    fig.show()
-"""

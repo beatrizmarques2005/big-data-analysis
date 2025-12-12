@@ -1,13 +1,8 @@
-
 import re
 import json
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
-from pyspark.sql.functions import (
-    col,
-    when,
-)
-
+from pyspark.sql.functions import (col, when)
 from pyspark.ml import Transformer
 from pyspark.ml.util import DefaultParamsReadable, DefaultParamsWritable
 from pyspark.ml.param.shared import Param, Params
@@ -40,8 +35,7 @@ def name_cleaner(name: str, char_list: list) -> str:
             temp_name = temp_name.replace(char, "")
         else:
             temp_name = temp_name.replace(char, "_")
-    #temp_name = name.replace(" ", "_").replace("-", "_").replace("/", "_").replace("&", "and").replace("(", "").replace(")", "")
-
+    
     return re.sub(r'[^\w]', '', temp_name)
 
 def show_column_types(df: DataFrame) -> None:
@@ -123,7 +117,6 @@ class Winsorizer(Transformer, DefaultParamsReadable, DefaultParamsWritable):
         self.upper_q = upper_q
         self.iqr_multiplier = iqr_multiplier
 
-        # Initialize bounds to empty JSON
         self._setDefault(bounds=json.dumps({}))
 
     def fit(self, df):
@@ -142,13 +135,11 @@ class Winsorizer(Transformer, DefaultParamsReadable, DefaultParamsWritable):
         """
         b = {}
         for c in self.columns:
-            # Approximate quantiles
             q1, q3 = df.approxQuantile(c, [self.lower_q, self.upper_q], 0.01)
             iqr = q3 - q1
             lower = q1 - self.iqr_multiplier * iqr
             upper = q3 + self.iqr_multiplier * iqr
             b[c] = (lower, upper)
-        # Save bounds as JSON Param (serializable)
         self._set(bounds=json.dumps(b))
         return self
 
@@ -170,7 +161,7 @@ class Winsorizer(Transformer, DefaultParamsReadable, DefaultParamsWritable):
         out_df = df
         for c, (lower, upper) in b.items():
             if c not in df.columns:
-                continue  # skip missing columns
+                continue 
             out_df = out_df.withColumn(
                 c,
                 when(col(c) < lower, lower)
@@ -231,7 +222,6 @@ class FeatureEngineering(Transformer, DefaultParamsReadable, DefaultParamsWritab
             Transformed DataFrame with new features.
         """
 
-        # New feature based on pdays
         df = df.withColumn(
             "had_previous_contact", 
             when(col("pdays") != -1, 1).otherwise(0)
@@ -240,7 +230,6 @@ class FeatureEngineering(Transformer, DefaultParamsReadable, DefaultParamsWritab
         df = df.drop("pdays")
 
         # df = df.withColumn("balance_per_campaign", col("balance_euros") / (col("campaign") + 1))
-        # New feature based on campaign median
         df = df.withColumn(
             "high_effort_client", 
             when(col("campaign") > self.campaign_median, 1).otherwise(0)
