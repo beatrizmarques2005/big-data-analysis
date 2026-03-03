@@ -50,6 +50,7 @@ big-data-analysis/
 ├── spark_checkpoints/                               # Metadata for structured Spark checkpoints
 │
 ├── .gitignore
+├── presentation.pdf
 └── README.md
 ```
 
