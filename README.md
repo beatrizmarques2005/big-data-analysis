@@ -1,18 +1,17 @@
-#  Big Data Analysis with PySpark  
+# Big Data Analysis with PySpark
+
+## 📋 Overview
 
 *This README provides an overview of the repository structure. Since only a powerpoint presentation was required for this assignment, the README serves as a brief guide to explain the purpose and contents of each folder.*
 
-
-## Quick Summary  
+## 📝 Quick Summary
 
 | Project                     | Focus Area                     | Key Spark Component | ML Task Type     |
 |----------------------------|--------------------------------|---------------------|------------------|
 | **Books Network**          | Network/Graph Data             | GraphFrames         | Graph Analytics  |
 | **Portuguese Bank Marketing** | Financial & Marketing Data     | Spark MLlib        | Binary Classification   |
 
----
-
-## Repository Structure  
+## 📁 Repository Structure
 
 ```tree
 big-data-analysis/
@@ -27,12 +26,12 @@ big-data-analysis/
 │
 ├── notebooks/
 │   ├── BankMarketing/
-│   │   ├── 01_exploration.ipynb    
-│   │   ├── 02_preprocessing.ipynb     
-│   │   ├── 03_modelling.ipynb    
-│   │   └── 04_deployment.ipynb     
+│   │   ├── 01_exploration.ipynb
+│   │   ├── 02_preprocessing.ipynb
+│   │   ├── 03_modelling.ipynb
+│   │   └── 04_deployment.ipynb
 │   │
-│   ├── Books/                    
+│   ├── Books/
 │   │   ├── 01_exploration_and_preprocessing.ipynb
 │   │   └── 02_graphframes.ipynb
 │   │
@@ -54,12 +53,10 @@ big-data-analysis/
 └── README.md
 ```
 
----
+## 👥 Team
 
-## Team  
-
-- Beatriz Marques – 20231605  
-- David Carrilho – 20231693  
-- Duarte Fernandes – 20231619  
-- Filipe Caçador – 20231707  
-- Mariana Calais-Pedro – 20231641  
+- Beatriz Marques – 20231605
+- David Carrilho – 20231693
+- Duarte Fernandes – 20231619
+- Filipe Caçador – 20231707
+- Mariana Calais-Pedro – 20231641
